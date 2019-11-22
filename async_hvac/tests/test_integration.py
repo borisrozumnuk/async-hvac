@@ -7,6 +7,7 @@ from uuid import UUID
 
 from async_hvac import AsyncClient, Client, exceptions
 from async_hvac.tests import util
+from .util import decode_generated_root_token, get_generate_root_otp
 
 loop = asyncio.get_event_loop()
 
@@ -1156,7 +1157,7 @@ class IntegrationTest(asynctest.TestCase):
         await self.client.disable_auth_backend('aws-ec2')
 
     async def test_start_generate_root_with_completion(self):
-        test_otp = 'RSMGkAqBH5WnVLrDTbZ+UQ=='
+        test_otp = get_generate_root_otp()
 
         self.assertFalse((await self.client.generate_root_status)['started'])
         response = await self.client.start_generate_root(
@@ -1175,20 +1176,10 @@ class IntegrationTest(asynctest.TestCase):
 
         # Decode the token provided in the last response. Root token decoding logic derived from:
         # https://github.com/hashicorp/vault/blob/284600fbefc32d8ab71b6b9d1d226f2f83b56b1d/command/operator_generate_root.go#L289
-        b64decoded_root_token = b64decode(response['encoded_root_token'])
-        if sys.version_info > (3, 0):
-            # b64decoding + bytes XOR'ing to decode the new root token in python 3.x
-            int_encoded_token = int.from_bytes(b64decoded_root_token, sys.byteorder)
-            int_otp = int.from_bytes(b64decode(test_otp), sys.byteorder)
-            xord_otp_and_token = int_otp ^ int_encoded_token
-            token_hex_string = xord_otp_and_token.to_bytes(len(b64decoded_root_token), sys.byteorder).hex()
-        else:
-            # b64decoding + bytes XOR'ing to decode the new root token in python 2.7
-            otp_and_token = zip(b64decode(test_otp), b64decoded_root_token)
-            xord_otp_and_token = ''.join(chr(ord(y) ^ ord(x)) for (x, y) in otp_and_token)
-            token_hex_string = binascii.hexlify(xord_otp_and_token)
-
-        new_root_token = str(UUID(token_hex_string))
+        new_root_token = decode_generated_root_token(
+            encoded_token=response['encoded_root_token'],
+            otp=test_otp,
+        )
 
         # Assert our new root token is properly formed and authenticated
         self.client.token = new_root_token
@@ -1200,7 +1191,7 @@ class IntegrationTest(asynctest.TestCase):
             self.fail('Unable to authenticate with the newly generated root token.')
 
     async def test_start_generate_root_then_cancel(self):
-        test_otp = 'RSMGkAqBH5WnVLrDTbZ+UQ=='
+        test_otp = get_generate_root_otp()
 
         self.assertFalse((await self.client.generate_root_status)['started'])
         await self.client.start_generate_root(

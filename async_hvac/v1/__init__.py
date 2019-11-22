@@ -5,6 +5,7 @@ import ssl
 from base64 import b64encode
 
 import aiohttp
+
 from async_hvac import aws_utils, exceptions
 
 try:
@@ -500,7 +501,8 @@ class AsyncClient(object):
         if orphan:
             return await (await self._post('/v1/auth/token/create-orphan', json=params, wrap_ttl=wrap_ttl)).json()
         elif role:
-            return await (await self._post('/v1/auth/token/create/{0}'.format(role), json=params, wrap_ttl=wrap_ttl)).json()
+            return await (
+                await self._post('/v1/auth/token/create/{0}'.format(role), json=params, wrap_ttl=wrap_ttl)).json()
         else:
             return await (await self._post('/v1/auth/token/create', json=params, wrap_ttl=wrap_ttl)).json()
 
@@ -560,12 +562,12 @@ class AsyncClient(object):
         params = {
             'increment': increment,
         }
+        path = '/v1/auth/token/renew'
 
         if token:
-            path = '/v1/auth/token/renew/{0}'.format(token)
-            return await (await self._post(path, json=params, wrap_ttl=wrap_ttl)).json()
+            return await (await self._post(path, json=dict(**params, token=token), wrap_ttl=wrap_ttl)).json()
         else:
-            return await (await self._post('/v1/auth/token/renew-self', json=params, wrap_ttl=wrap_ttl)).json()
+            return await (await self._post(f'{path}-self', json=params, wrap_ttl=wrap_ttl)).json()
 
     def create_token_role(self, role,
                           allowed_policies=None, disallowed_policies=None,
@@ -658,7 +660,8 @@ class AsyncClient(object):
 
         return self.auth('/v1/auth/{0}/login/{1}'.format(mount_point, username), json=params, use_token=use_token)
 
-    async def auth_aws_iam(self, access_key, secret_key, session_token=None, header_value=None, mount_point='aws', role='', use_token=True):
+    async def auth_aws_iam(self, access_key, secret_key, session_token=None, header_value=None, mount_point='aws',
+                           role='', use_token=True):
         """
         POST /auth/<mount point>/login
         """
@@ -909,7 +912,7 @@ class AsyncClient(object):
 
     def create_ec2_role(self, role, bound_ami_id=None, bound_account_id=None, bound_iam_role_arn=None,
                         bound_iam_instance_profile_arn=None, bound_ec2_instance_id=None, bound_region=None,
-                        bound_vpc_id=None, bound_subnet_id=None, role_tag=None,  ttl=None, max_ttl=None, period=None,
+                        bound_vpc_id=None, bound_subnet_id=None, role_tag=None, ttl=None, max_ttl=None, period=None,
                         policies=None, allow_instance_migration=False, disallow_reauthentication=False,
                         resolve_aws_unique_ids=None, mount_point='aws-ec2'):
         """
@@ -1056,7 +1059,8 @@ class AsyncClient(object):
 
         return self._post('/v1/sys/auth/{0}'.format(mount_point), json=params)
 
-    def tune_auth_backend(self, backend_type, mount_point=None, default_lease_ttl=None, max_lease_ttl=None, description=None,
+    def tune_auth_backend(self, backend_type, mount_point=None, default_lease_ttl=None, max_lease_ttl=None,
+                          description=None,
                           audit_non_hmac_request_keys=None, audit_non_hmac_response_keys=None, listing_visibility=None,
                           passthrough_request_headers=None):
         """
@@ -1238,7 +1242,8 @@ class AsyncClient(object):
 
         return self.auth('/v1/auth/{0}/login'.format(mount_point), json=params, use_token=use_token)
 
-    def create_kubernetes_configuration(self, kubernetes_host, kubernetes_ca_cert=None, token_reviewer_jwt=None, pem_keys=None, mount_point='kubernetes'):
+    def create_kubernetes_configuration(self, kubernetes_host, kubernetes_ca_cert=None, token_reviewer_jwt=None,
+                                        pem_keys=None, mount_point='kubernetes'):
         """
         POST /auth/<mount_point>/config
         :param kubernetes_host: str, a host:port pair, or a URL to the base of the Kubernetes API server.
@@ -1452,7 +1457,8 @@ class AsyncClient(object):
 
         return await (await self._post(url, json=params)).json()
 
-    async def transit_decrypt_data(self, name, ciphertext, context=None, nonce=None, batch_input=None, mount_point='transit'):
+    async def transit_decrypt_data(self, name, ciphertext, context=None, nonce=None, batch_input=None,
+                                   mount_point='transit'):
         """
         POST /<mount_point>/decrypt/<name>
         """
@@ -1489,7 +1495,8 @@ class AsyncClient(object):
 
         return await (await self._post(url, json=params)).json()
 
-    async def transit_generate_data_key(self, name, key_type, context=None, nonce=None, bits=None, mount_point='transit'):
+    async def transit_generate_data_key(self, name, key_type, context=None, nonce=None, bits=None,
+                                        mount_point='transit'):
         """
         POST /<mount_point>/datakey/<type>/<name>
         """
@@ -1575,7 +1582,8 @@ class AsyncClient(object):
 
         return await (await self._post(url, json=params)).json()
 
-    async def transit_verify_signed_data(self, name, input_data, algorithm=None, signature=None, hmac=None, context=None,
+    async def transit_verify_signed_data(self, name, input_data, algorithm=None, signature=None, hmac=None,
+                                         context=None,
                                          prehashed=None, mount_point='transit', signature_algorithm='pss'):
         """
         POST /<mount_point>/verify/<name>(/<algorithm>)

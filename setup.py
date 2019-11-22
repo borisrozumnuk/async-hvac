@@ -25,7 +25,7 @@ setup(
     classifiers=['License :: OSI Approved :: Apache Software License'],
     packages=find_packages(),
     install_requires=[
-        'aiohttp==3.5.4',
+        'aiohttp',
     ],
     include_package_data=True,
     package_data={'async_hvac': ['version']},
