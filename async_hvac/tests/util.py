@@ -64,7 +64,7 @@ class ServerManager(object):
         return self.client.unseal_multi(self.keys)
 
 
-VERSION_REGEX = re.compile('Vault v([\d\.]+)')
+VERSION_REGEX = re.compile(r'Vault v([\d.]+)')
 
 
 def match_version(spec):

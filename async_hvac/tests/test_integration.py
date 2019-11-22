@@ -1,9 +1,5 @@
 import asyncio
 import asynctest
-import binascii
-import sys
-from base64 import b64decode
-from uuid import UUID
 
 from async_hvac import AsyncClient, Client, exceptions
 from async_hvac.tests import util
